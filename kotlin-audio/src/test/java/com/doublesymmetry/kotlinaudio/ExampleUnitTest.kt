@@ -1,4 +1,4 @@
-package com.doublesymmetry.kotlinaudio
+package com.readwise.kotlinaudio
 
 import org.junit.Test
 

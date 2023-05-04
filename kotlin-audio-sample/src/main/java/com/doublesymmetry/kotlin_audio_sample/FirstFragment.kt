@@ -10,8 +10,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.doublesymmetry.kotlin_audio_sample.databinding.FragmentFirstBinding
-import com.doublesymmetry.kotlinaudio.models.*
-import com.doublesymmetry.kotlinaudio.players.QueuedAudioPlayer
+import com.readwise.kotlinaudio.models.*
+import com.readwise.kotlinaudio.players.QueuedAudioPlayer
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import timber.log.Timber

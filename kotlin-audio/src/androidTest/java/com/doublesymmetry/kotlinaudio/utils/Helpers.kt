@@ -1,4 +1,4 @@
-package com.doublesymmetry.kotlinaudio.utils
+package com.readwise.kotlinaudio.utils
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow

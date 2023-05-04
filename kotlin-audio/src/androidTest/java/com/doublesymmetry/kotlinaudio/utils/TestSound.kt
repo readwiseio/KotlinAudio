@@ -1,9 +1,9 @@
-package com.doublesymmetry.kotlinaudio.utils
+package com.readwise.kotlinaudio.utils
 
-import com.doublesymmetry.kotlinaudio.test.R
-import com.doublesymmetry.kotlinaudio.models.AudioItemOptions
-import com.doublesymmetry.kotlinaudio.models.DefaultAudioItem
-import com.doublesymmetry.kotlinaudio.models.MediaType
+import com.readwise.kotlinaudio.test.R
+import com.readwise.kotlinaudio.models.AudioItemOptions
+import com.readwise.kotlinaudio.models.DefaultAudioItem
+import com.readwise.kotlinaudio.models.MediaType
 
 object TestSound {
     /** The common test case (track is 3 seconds long). */

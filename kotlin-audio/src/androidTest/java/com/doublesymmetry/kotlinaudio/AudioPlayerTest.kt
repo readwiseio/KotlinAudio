@@ -1,10 +1,10 @@
-package com.doublesymmetry.kotlinaudio
+package com.readwise.kotlinaudio
 
 import androidx.test.platform.app.InstrumentationRegistry
-import com.doublesymmetry.kotlinaudio.models.AudioPlayerState
-import com.doublesymmetry.kotlinaudio.models.CacheConfig
-import com.doublesymmetry.kotlinaudio.players.QueuedAudioPlayer
-import com.doublesymmetry.kotlinaudio.utils.*
+import com.readwise.kotlinaudio.models.AudioPlayerState
+import com.readwise.kotlinaudio.models.CacheConfig
+import com.readwise.kotlinaudio.players.QueuedAudioPlayer
+import com.readwise.kotlinaudio.utils.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.junit.jupiter.api.Assertions.*
