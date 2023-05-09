@@ -47,7 +47,12 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
-abstract class BaseAudioPlayer internal constructor(private val context: Context, playerConfig: PlayerConfig, private val bufferConfig: BufferConfig?, private val cacheConfig: CacheConfig?) : AudioManager.OnAudioFocusChangeListener {
+abstract class BaseAudioPlayer internal constructor(
+    private val context: Context,
+    playerConfig: PlayerConfig,
+    private val bufferConfig: BufferConfig?,
+    private val cacheConfig: CacheConfig?
+) : AudioManager.OnAudioFocusChangeListener {
     protected val exoPlayer: ExoPlayer
     private val forwardingPlayer: ForwardingPlayer
 
@@ -121,16 +126,31 @@ abstract class BaseAudioPlayer internal constructor(private val context: Context
 
             mediaSession.setRatingType(ratingType)
             mediaSessionConnector.setRatingCallback(object : MediaSessionConnector.RatingCallback {
-                override fun onCommand(player: Player, command: String, extras: Bundle?, cb: ResultReceiver?): Boolean {
+                override fun onCommand(
+                    player: Player,
+                    command: String,
+                    extras: Bundle?,
+                    cb: ResultReceiver?
+                ): Boolean {
                     return true
                 }
 
                 override fun onSetRating(player: Player, rating: RatingCompat) {
-                    playerEventHolder.updateOnPlayerActionTriggeredExternally(MediaSessionCallback.RATING(rating, null))
+                    playerEventHolder.updateOnPlayerActionTriggeredExternally(
+                        MediaSessionCallback.RATING(
+                            rating,
+                            null
+                        )
+                    )
                 }
 
                 override fun onSetRating(player: Player, rating: RatingCompat, extras: Bundle?) {
-                    playerEventHolder.updateOnPlayerActionTriggeredExternally(MediaSessionCallback.RATING(rating, extras))
+                    playerEventHolder.updateOnPlayerActionTriggeredExternally(
+                        MediaSessionCallback.RATING(
+                            rating,
+                            extras
+                        )
+                    )
                 }
             })
         }
@@ -159,9 +179,15 @@ abstract class BaseAudioPlayer internal constructor(private val context: Context
 
         mediaSession.isActive = true
 
-        val playerToUse = if (playerConfig.interceptPlayerActionsTriggeredExternally) forwardingPlayer else exoPlayer
+        val playerToUse =
+            if (playerConfig.interceptPlayerActionsTriggeredExternally) forwardingPlayer else exoPlayer
 
-        notificationManager = NotificationManager(context, playerToUse, mediaSession.sessionToken, notificationEventHolder)
+        notificationManager = NotificationManager(
+            context,
+            playerToUse,
+            mediaSession.sessionToken,
+            notificationEventHolder
+        )
 
         exoPlayer.addListener(PlayerListener())
 
@@ -201,18 +227,27 @@ abstract class BaseAudioPlayer internal constructor(private val context: Context
             }
 
             override fun seekTo(positionMs: Long) {
-                playerEventHolder.updateOnPlayerActionTriggeredExternally(MediaSessionCallback.SEEK(positionMs))
+                playerEventHolder.updateOnPlayerActionTriggeredExternally(
+                    MediaSessionCallback.SEEK(
+                        positionMs
+                    )
+                )
             }
         }
     }
 
     private fun setupBuffer(bufferConfig: BufferConfig): DefaultLoadControl {
         bufferConfig.apply {
-            val multiplier = DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS / DEFAULT_BUFFER_FOR_PLAYBACK_MS
-            val minBuffer = if (minBuffer != null && minBuffer != 0) minBuffer else DEFAULT_MIN_BUFFER_MS
-            val maxBuffer = if (maxBuffer != null && maxBuffer != 0) maxBuffer else DEFAULT_MAX_BUFFER_MS
-            val playBuffer = if (playBuffer != null && playBuffer != 0) playBuffer else DEFAULT_BUFFER_FOR_PLAYBACK_MS
-            val backBuffer = if (backBuffer != null && backBuffer != 0) backBuffer else DEFAULT_BACK_BUFFER_DURATION_MS
+            val multiplier =
+                DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS / DEFAULT_BUFFER_FOR_PLAYBACK_MS
+            val minBuffer =
+                if (minBuffer != null && minBuffer != 0) minBuffer else DEFAULT_MIN_BUFFER_MS
+            val maxBuffer =
+                if (maxBuffer != null && maxBuffer != 0) maxBuffer else DEFAULT_MAX_BUFFER_MS
+            val playBuffer =
+                if (playBuffer != null && playBuffer != 0) playBuffer else DEFAULT_BUFFER_FOR_PLAYBACK_MS
+            val backBuffer =
+                if (backBuffer != null && backBuffer != 0) backBuffer else DEFAULT_BACK_BUFFER_DURATION_MS
 
             return Builder()
                 .setBufferDurationsMs(minBuffer, maxBuffer, playBuffer, playBuffer * multiplier)
@@ -286,11 +321,12 @@ abstract class BaseAudioPlayer internal constructor(private val context: Context
         val uri = Uri.parse(audioItem.audioUrl)
         val mediaItem = getMediaItemFromAudioItem(audioItem)
 
-        val userAgent = if (audioItem.options == null || audioItem.options!!.userAgent.isNullOrBlank()) {
-            Util.getUserAgent(context, APPLICATION_NAME)
-        } else {
-            audioItem.options!!.userAgent
-        }
+        val userAgent =
+            if (audioItem.options == null || audioItem.options!!.userAgent.isNullOrBlank()) {
+                Util.getUserAgent(context, APPLICATION_NAME)
+            } else {
+                audioItem.options!!.userAgent
+            }
 
         factory = when {
             audioItem.options?.resourceId != null -> {
@@ -298,17 +334,29 @@ abstract class BaseAudioPlayer internal constructor(private val context: Context
                 raw.open(DataSpec(uri))
                 DataSource.Factory { raw }
             }
+
             isUriLocal(uri) -> {
                 DefaultDataSourceFactory(context, userAgent)
             }
-            else -> {
-                val tempFactory = DefaultHttpDataSource.Factory().apply {
-                    setUserAgent(userAgent)
-                    setAllowCrossProtocolRedirects(true)
 
-                    audioItem.options?.headers?.let {
-                        setDefaultRequestProperties(it.toMap())
+            else -> {
+                val tempFactory = ResolvingDataSource.Factory(
+                    DefaultHttpDataSource.Factory().apply {
+                        setUserAgent(userAgent)
+                        setAllowCrossProtocolRedirects(true)
+
+                        audioItem.options?.headers?.let {
+                            setDefaultRequestProperties(it.toMap())
+                        }
                     }
+                ) { dataSpec ->
+                    dataSpec.withRequestHeaders(
+                        if (dataSpec.length == C.LENGTH_UNSET.toLong()) {
+                            mapOf("Range" to "bytes=0-720000")
+                        } else {
+                            mapOf()
+                        }
+                    )
                 }
 
                 enableCaching(tempFactory)
@@ -338,7 +386,10 @@ abstract class BaseAudioPlayer internal constructor(private val context: Context
             .createMediaSource(mediaItem)
     }
 
-    private fun createProgressiveSource(mediaItem: MediaItem, factory: DataSource.Factory): ProgressiveMediaSource {
+    private fun createProgressiveSource(
+        mediaItem: MediaItem,
+        factory: DataSource.Factory
+    ): ProgressiveMediaSource {
         return ProgressiveMediaSource.Factory(
             factory, DefaultExtractorsFactory()
                 .setConstantBitrateSeekingEnabled(true)
@@ -412,8 +463,10 @@ abstract class BaseAudioPlayer internal constructor(private val context: Context
                 isPaused = true
                 abandonAudioFocusIfHeld()
             }
+
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> isPaused = true
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> if (playerOptions.alwaysPauseOnInterruption) isPaused = true else isDucking = true
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> if (playerOptions.alwaysPauseOnInterruption) isPaused =
+                true else isDucking = true
         }
 
         if (isDucking) {
@@ -433,10 +486,14 @@ abstract class BaseAudioPlayer internal constructor(private val context: Context
 
     inner class PlayerListener : Listener {
         override fun onMetadata(metadata: Metadata) {
-            PlaybackMetadata.fromId3Metadata(metadata)?.let { playerEventHolder.updateOnPlaybackMetadata(it) }
-            PlaybackMetadata.fromIcy(metadata)?.let { playerEventHolder.updateOnPlaybackMetadata(it) }
-            PlaybackMetadata.fromVorbisComment(metadata)?.let { playerEventHolder.updateOnPlaybackMetadata(it) }
-            PlaybackMetadata.fromQuickTime(metadata)?.let { playerEventHolder.updateOnPlaybackMetadata(it) }
+            PlaybackMetadata.fromId3Metadata(metadata)
+                ?.let { playerEventHolder.updateOnPlaybackMetadata(it) }
+            PlaybackMetadata.fromIcy(metadata)
+                ?.let { playerEventHolder.updateOnPlaybackMetadata(it) }
+            PlaybackMetadata.fromVorbisComment(metadata)
+                ?.let { playerEventHolder.updateOnPlaybackMetadata(it) }
+            PlaybackMetadata.fromQuickTime(metadata)
+                ?.let { playerEventHolder.updateOnPlaybackMetadata(it) }
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
@@ -446,10 +503,12 @@ abstract class BaseAudioPlayer internal constructor(private val context: Context
                     requestAudioFocus()
                     AudioPlayerState.READY
                 }
+
                 Player.STATE_IDLE -> {
                     abandonAudioFocusIfHeld()
                     AudioPlayerState.IDLE
                 }
+
                 Player.STATE_ENDED -> AudioPlayerState.ENDED
                 else -> {
                     Timber.e("Unknown playback state: $playbackState")
@@ -458,29 +517,74 @@ abstract class BaseAudioPlayer internal constructor(private val context: Context
             }
         }
 
-        override fun onPositionDiscontinuity(oldPosition: Player.PositionInfo, newPosition: Player.PositionInfo, reason: Int) {
+        override fun onPositionDiscontinuity(
+            oldPosition: Player.PositionInfo,
+            newPosition: Player.PositionInfo,
+            reason: Int
+        ) {
             this@BaseAudioPlayer.oldPosition = oldPosition.positionMs
 
             when (reason) {
-                Player.DISCONTINUITY_REASON_AUTO_TRANSITION -> playerEventHolder.updatePositionChangedReason(PositionChangedReason.AUTO(oldPosition.positionMs, newPosition.positionMs))
-                Player.DISCONTINUITY_REASON_SEEK -> playerEventHolder.updatePositionChangedReason(PositionChangedReason.SEEK(oldPosition.positionMs, newPosition.positionMs))
-                Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT -> playerEventHolder.updatePositionChangedReason(PositionChangedReason.SEEK_FAILED(oldPosition.positionMs, newPosition.positionMs))
-                Player.DISCONTINUITY_REASON_REMOVE -> playerEventHolder.updatePositionChangedReason(PositionChangedReason.QUEUE_CHANGED(oldPosition.positionMs, newPosition.positionMs))
-                Player.DISCONTINUITY_REASON_SKIP -> playerEventHolder.updatePositionChangedReason(PositionChangedReason.SKIPPED_PERIOD(oldPosition.positionMs, newPosition.positionMs))
-                Player.DISCONTINUITY_REASON_INTERNAL -> playerEventHolder.updatePositionChangedReason(PositionChangedReason.UNKNOWN(oldPosition.positionMs, newPosition.positionMs))
+                Player.DISCONTINUITY_REASON_AUTO_TRANSITION -> playerEventHolder.updatePositionChangedReason(
+                    PositionChangedReason.AUTO(oldPosition.positionMs, newPosition.positionMs)
+                )
+
+                Player.DISCONTINUITY_REASON_SEEK -> playerEventHolder.updatePositionChangedReason(
+                    PositionChangedReason.SEEK(oldPosition.positionMs, newPosition.positionMs)
+                )
+
+                Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT -> playerEventHolder.updatePositionChangedReason(
+                    PositionChangedReason.SEEK_FAILED(
+                        oldPosition.positionMs,
+                        newPosition.positionMs
+                    )
+                )
+
+                Player.DISCONTINUITY_REASON_REMOVE -> playerEventHolder.updatePositionChangedReason(
+                    PositionChangedReason.QUEUE_CHANGED(
+                        oldPosition.positionMs,
+                        newPosition.positionMs
+                    )
+                )
+
+                Player.DISCONTINUITY_REASON_SKIP -> playerEventHolder.updatePositionChangedReason(
+                    PositionChangedReason.SKIPPED_PERIOD(
+                        oldPosition.positionMs,
+                        newPosition.positionMs
+                    )
+                )
+
+                Player.DISCONTINUITY_REASON_INTERNAL -> playerEventHolder.updatePositionChangedReason(
+                    PositionChangedReason.UNKNOWN(oldPosition.positionMs, newPosition.positionMs)
+                )
             }
         }
 
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
             when (reason) {
-                Player.MEDIA_ITEM_TRANSITION_REASON_AUTO -> playerEventHolder.updateAudioItemTransition(AudioItemTransitionReason.AUTO(oldPosition))
-                Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED -> playerEventHolder.updateAudioItemTransition(AudioItemTransitionReason.QUEUE_CHANGED(oldPosition))
-                Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT -> playerEventHolder.updateAudioItemTransition(AudioItemTransitionReason.REPEAT(oldPosition))
-                Player.MEDIA_ITEM_TRANSITION_REASON_SEEK -> playerEventHolder.updateAudioItemTransition(AudioItemTransitionReason.SEEK_TO_ANOTHER_AUDIO_ITEM(oldPosition))
+                Player.MEDIA_ITEM_TRANSITION_REASON_AUTO -> playerEventHolder.updateAudioItemTransition(
+                    AudioItemTransitionReason.AUTO(oldPosition)
+                )
+
+                Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED -> playerEventHolder.updateAudioItemTransition(
+                    AudioItemTransitionReason.QUEUE_CHANGED(oldPosition)
+                )
+
+                Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT -> playerEventHolder.updateAudioItemTransition(
+                    AudioItemTransitionReason.REPEAT(oldPosition)
+                )
+
+                Player.MEDIA_ITEM_TRANSITION_REASON_SEEK -> playerEventHolder.updateAudioItemTransition(
+                    AudioItemTransitionReason.SEEK_TO_ANOTHER_AUDIO_ITEM(oldPosition)
+                )
             }
 
             if (automaticallyUpdateNotificationMetadata) {
-                notificationManager.notificationMetadata = NotificationMetadata(currentItem?.title, currentItem?.artist, currentItem?.artwork)
+                notificationManager.notificationMetadata = NotificationMetadata(
+                    currentItem?.title,
+                    currentItem?.artist,
+                    currentItem?.artwork
+                )
             }
 
             mediaSessionConnector.setMediaMetadataProvider {
