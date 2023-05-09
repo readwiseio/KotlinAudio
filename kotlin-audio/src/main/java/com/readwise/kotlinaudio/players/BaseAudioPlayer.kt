@@ -17,16 +17,18 @@ import androidx.media.AudioAttributesCompat.USAGE_MEDIA
 import androidx.media.AudioFocusRequestCompat
 import androidx.media.AudioManagerCompat
 import androidx.media.AudioManagerCompat.AUDIOFOCUS_GAIN
-import com.readwise.kotlinaudio.event.EventHolder
-import com.readwise.kotlinaudio.event.NotificationEventHolder
-import com.readwise.kotlinaudio.event.PlayerEventHolder
-import com.readwise.kotlinaudio.models.*
-import com.readwise.kotlinaudio.notification.NotificationManager
-import com.readwise.kotlinaudio.players.components.PlayerCache
-import com.readwise.kotlinaudio.players.components.getMediaMetadataCompat
-import com.readwise.kotlinaudio.utils.isUriLocal
-import com.google.android.exoplayer2.*
-import com.google.android.exoplayer2.DefaultLoadControl.*
+import com.google.android.exoplayer2.C
+import com.google.android.exoplayer2.DefaultLoadControl
+import com.google.android.exoplayer2.DefaultLoadControl.Builder
+import com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_BACK_BUFFER_DURATION_MS
+import com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
+import com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS
+import com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_MAX_BUFFER_MS
+import com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_MIN_BUFFER_MS
+import com.google.android.exoplayer2.ExoPlayer
+import com.google.android.exoplayer2.ForwardingPlayer
+import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.Player.Listener
 import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory
@@ -38,10 +40,35 @@ import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource
 import com.google.android.exoplayer2.source.hls.HlsMediaSource
 import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource
-import com.google.android.exoplayer2.upstream.*
+import com.google.android.exoplayer2.upstream.DataSource
+import com.google.android.exoplayer2.upstream.DataSpec
+import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
+import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
+import com.google.android.exoplayer2.upstream.RawResourceDataSource
+import com.google.android.exoplayer2.upstream.ResolvingDataSource
 import com.google.android.exoplayer2.upstream.cache.CacheDataSource
 import com.google.android.exoplayer2.upstream.cache.SimpleCache
 import com.google.android.exoplayer2.util.Util
+import com.readwise.kotlinaudio.event.EventHolder
+import com.readwise.kotlinaudio.event.NotificationEventHolder
+import com.readwise.kotlinaudio.event.PlayerEventHolder
+import com.readwise.kotlinaudio.models.AudioItem
+import com.readwise.kotlinaudio.models.AudioItemTransitionReason
+import com.readwise.kotlinaudio.models.AudioPlayerState
+import com.readwise.kotlinaudio.models.BufferConfig
+import com.readwise.kotlinaudio.models.CacheConfig
+import com.readwise.kotlinaudio.models.DefaultPlayerOptions
+import com.readwise.kotlinaudio.models.MediaSessionCallback
+import com.readwise.kotlinaudio.models.MediaType
+import com.readwise.kotlinaudio.models.NotificationMetadata
+import com.readwise.kotlinaudio.models.PlaybackMetadata
+import com.readwise.kotlinaudio.models.PlayerConfig
+import com.readwise.kotlinaudio.models.PlayerOptions
+import com.readwise.kotlinaudio.models.PositionChangedReason
+import com.readwise.kotlinaudio.notification.NotificationManager
+import com.readwise.kotlinaudio.players.components.PlayerCache
+import com.readwise.kotlinaudio.players.components.getMediaMetadataCompat
+import com.readwise.kotlinaudio.utils.isUriLocal
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -340,23 +367,13 @@ abstract class BaseAudioPlayer internal constructor(
             }
 
             else -> {
-                val tempFactory = ResolvingDataSource.Factory(
-                    DefaultHttpDataSource.Factory().apply {
-                        setUserAgent(userAgent)
-                        setAllowCrossProtocolRedirects(true)
+                val tempFactory = DefaultHttpDataSource.Factory().apply {
+                    setUserAgent(userAgent)
+                    setAllowCrossProtocolRedirects(true)
 
-                        audioItem.options?.headers?.let {
-                            setDefaultRequestProperties(it.toMap())
-                        }
+                    audioItem.options?.headers?.let {
+                        setDefaultRequestProperties(it.toMap())
                     }
-                ) { dataSpec ->
-                    dataSpec.withRequestHeaders(
-                        if (dataSpec.length == C.LENGTH_UNSET.toLong()) {
-                            mapOf("Range" to "bytes=0-720000")
-                        } else {
-                            mapOf()
-                        }
-                    )
                 }
 
                 enableCaching(tempFactory)
