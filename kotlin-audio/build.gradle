@@ -7,7 +7,7 @@ plugins {
 
 def versionNumber = '1.2.4'
 
-group = 'com.github.doublesymmetry'
+group = 'com.github.readwiseio'
 version = versionNumber
 
 android {
