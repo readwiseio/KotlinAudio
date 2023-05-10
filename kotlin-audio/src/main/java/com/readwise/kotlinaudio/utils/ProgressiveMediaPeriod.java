@@ -983,6 +983,7 @@ import java.util.Map;
         private DataSpec dataSpec;
         @Nullable private TrackOutput icyTrackOutput;
         private boolean seenIcyMetadata;
+        private long length;
 
         @SuppressWarnings("nullness:method.invocation")
         public ExtractingLoadable(
@@ -1019,6 +1020,7 @@ import java.util.Map;
                     long length = dataSource.open(dataSpec);
                     if (length != C.LENGTH_UNSET) {
                         length += position;
+                        this.length = length;
                         onLengthKnown();
                     }
                     icyHeaders = IcyHeaders.parse(dataSource.getResponseHeaders());
@@ -1096,6 +1098,7 @@ import java.util.Map;
                     .setUri(uri)
                     .setPosition(position)
                     .setKey(customCacheKey)
+                    .setLength(min(this.length - this.positionHolder.position, 720_000))
                     .setFlags(
                             DataSpec.FLAG_DONT_CACHE_IF_LENGTH_UNKNOWN | DataSpec.FLAG_ALLOW_CACHE_FRAGMENTATION)
                     .setHttpRequestHeaders(ICY_METADATA_HEADERS)
