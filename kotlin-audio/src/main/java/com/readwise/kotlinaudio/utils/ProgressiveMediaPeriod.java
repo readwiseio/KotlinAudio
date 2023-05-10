@@ -59,6 +59,7 @@ import com.google.android.exoplayer2.upstream.Allocator;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DataSourceUtil;
 import com.google.android.exoplayer2.upstream.DataSpec;
+import com.google.android.exoplayer2.upstream.HttpUtil;
 import com.google.android.exoplayer2.upstream.LoadErrorHandlingPolicy;
 import com.google.android.exoplayer2.upstream.LoadErrorHandlingPolicy.LoadErrorInfo;
 import com.google.android.exoplayer2.upstream.Loader;
@@ -81,6 +82,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /** A {@link MediaPeriod} that extracts data using an {@link Extractor}. */
 /* package */ final class ProgressiveMediaPeriod
@@ -89,6 +91,8 @@ import java.util.Map;
         Loader.Callback<ProgressiveMediaPeriod.ExtractingLoadable>,
         Loader.ReleaseCallback,
         UpstreamFormatChangedListener {
+
+    public static final int MAX_STREAM_REQUEST_SIZE = 720_000;
 
     /** Listener for information about the period. */
     interface Listener {
@@ -983,7 +987,7 @@ import java.util.Map;
         private DataSpec dataSpec;
         @Nullable private TrackOutput icyTrackOutput;
         private boolean seenIcyMetadata;
-        private long length;
+        private long streamLength;
 
         @SuppressWarnings("nullness:method.invocation")
         public ExtractingLoadable(
@@ -1017,10 +1021,13 @@ import java.util.Map;
                 try {
                     long position = positionHolder.position;
                     dataSpec = buildDataSpec(position);
-                    long length = dataSource.open(dataSpec);
+                    // The dataSpec has a preset limited length, so we need to manually read the stream length after load
+                    dataSource.open(dataSpec);
+                    String contentRangeHeader = Objects.requireNonNull(dataSource.getLastResponseHeaders().get("Content-Range")).get(0);
+                    long length = HttpUtil.getDocumentSize(contentRangeHeader);
                     if (length != C.LENGTH_UNSET) {
                         length += position;
-                        this.length = length;
+                        this.streamLength = length;
                         onLengthKnown();
                     }
                     icyHeaders = IcyHeaders.parse(dataSource.getResponseHeaders());
@@ -1098,7 +1105,7 @@ import java.util.Map;
                     .setUri(uri)
                     .setPosition(position)
                     .setKey(customCacheKey)
-                    .setLength(this.length > 0 ? min(this.length - this.positionHolder.position, 720_000) : 720_000)
+                    .setLength(this.streamLength != 0 ? min(this.streamLength - this.positionHolder.position, MAX_STREAM_REQUEST_SIZE) : MAX_STREAM_REQUEST_SIZE)
                     .setFlags(
                             DataSpec.FLAG_DONT_CACHE_IF_LENGTH_UNKNOWN | DataSpec.FLAG_ALLOW_CACHE_FRAGMENTATION)
                     .setHttpRequestHeaders(ICY_METADATA_HEADERS)
