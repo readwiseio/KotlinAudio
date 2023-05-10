@@ -1098,7 +1098,7 @@ import java.util.Map;
                     .setUri(uri)
                     .setPosition(position)
                     .setKey(customCacheKey)
-                    .setLength(min(this.length - this.positionHolder.position, 720_000))
+                    .setLength(this.length > 0 ? min(this.length - this.positionHolder.position, 720_000) : 720_000)
                     .setFlags(
                             DataSpec.FLAG_DONT_CACHE_IF_LENGTH_UNKNOWN | DataSpec.FLAG_ALLOW_CACHE_FRAGMENTATION)
                     .setHttpRequestHeaders(ICY_METADATA_HEADERS)
