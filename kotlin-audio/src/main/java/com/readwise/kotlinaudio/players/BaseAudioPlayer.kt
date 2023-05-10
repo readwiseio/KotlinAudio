@@ -34,7 +34,6 @@ import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory
 import com.google.android.exoplayer2.metadata.Metadata
 import com.google.android.exoplayer2.source.MediaSource
-import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.source.dash.DashMediaSource
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource
 import com.google.android.exoplayer2.source.hls.HlsMediaSource
@@ -45,7 +44,6 @@ import com.google.android.exoplayer2.upstream.DataSpec
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.upstream.RawResourceDataSource
-import com.google.android.exoplayer2.upstream.ResolvingDataSource
 import com.google.android.exoplayer2.upstream.cache.CacheDataSource
 import com.google.android.exoplayer2.upstream.cache.SimpleCache
 import com.google.android.exoplayer2.util.Util
@@ -68,6 +66,7 @@ import com.readwise.kotlinaudio.models.PositionChangedReason
 import com.readwise.kotlinaudio.notification.NotificationManager
 import com.readwise.kotlinaudio.players.components.PlayerCache
 import com.readwise.kotlinaudio.players.components.getMediaMetadataCompat
+import com.readwise.kotlinaudio.utils.ProgressiveMediaSource
 import com.readwise.kotlinaudio.utils.isUriLocal
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch

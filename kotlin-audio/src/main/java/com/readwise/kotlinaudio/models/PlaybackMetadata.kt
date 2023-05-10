@@ -1,10 +1,10 @@
 package com.readwise.kotlinaudio.models
 
+import com.google.android.exoplayer2.metadata.id3.TextInformationFrame
 import com.google.android.exoplayer2.metadata.Metadata
 import com.google.android.exoplayer2.metadata.flac.VorbisComment
 import com.google.android.exoplayer2.metadata.icy.IcyHeaders
 import com.google.android.exoplayer2.metadata.icy.IcyInfo
-import com.google.android.exoplayer2.metadata.id3.TextInformationFrame
 import com.google.android.exoplayer2.metadata.id3.UrlLinkFrame
 import com.google.android.exoplayer2.metadata.mp4.MdtaMetadataEntry
 
